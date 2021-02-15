@@ -115,47 +115,73 @@ class ParameterWithFloatList(ParameterWithList):
         except ValueError:
             raise ValueError('could not convert parameter to a list')
 
-
-class ParameterWithInterval(Parameter):
+def ParameterWithInterval(strategy):
     def _split(self, index=None):
         if self.is_set and '/' in self.value:
             return self.value.split('/')[index]
-        return None
+        return ""
 
     @property
     def is_interval(self):
         return self.value is not None and '/' in self.value
 
+    def _get_and_convert(self, i):
+        value = self._split(i)
+
+        # Open-ended intervals are denoted by ".."
+        if value == "..":
+            return None
+
+        # This can fail, but the most useful error message is likely to come
+        # from strategy() so we let it propagate.
+        return strategy(value)
+
     @property
     def interval_from(self):
         try:
-            return self._split(0)
+            return self._get_and_convert(0)
         except (ValueError, TypeError):
             raise ValueError('unable to get interval from value')
 
     @property
     def interval_to(self):
         try:
-            return self._split(1)
+            return self._get_and_convert(1)
         except (ValueError, TypeError):
             raise ValueError('unable to get interval to value')
 
+    class_namespace = {
+        "_get_and_convert": _get_and_convert,
+        "_split": _split,
+        "interval_from": interval_from,
+        "interval_to": interval_to,
+        "is_interval": is_interval,
+    }
 
-class DateTime(ParameterWithInterval):
-    @property
-    def interval_from(self):
-        return format_date(super().interval_from)
+    return type(f"ParameterWithInterval({strategy.__name__})", (Parameter,), class_namespace)
 
-    @property
-    def interval_to(self):
-        return format_date(super().interval_to)
 
+class DateTime(ParameterWithInterval(format_date)):
     @property
     def exact(self):
         return format_date(self.value)
 
+    @property
+    def interval_from(self):
+        try:
+            return super().interval_from
+        except ValueError:
+            raise ValueError('Datetime format not recognised')
 
-class Z(ParameterWithFloatList, ParameterWithInterval):
+    @property
+    def interval_to(self):
+        try:
+            return super().interval_to
+        except ValueError:
+            raise ValueError('Datetime format not recognised')
+
+
+class Z(ParameterWithFloatList, ParameterWithInterval(float)):
     @property
     def float(self):
         try:
@@ -166,15 +192,15 @@ class Z(ParameterWithFloatList, ParameterWithInterval):
     @property
     def interval_from(self):
         try:
-            return float(super().interval_from)
-        except TypeError:
+            return super().interval_from
+        except ValueError:
             raise ValueError('unable to get z from value')
 
     @property
     def interval_to(self):
         try:
-            return float(super().interval_to)
-        except TypeError:
+            return super().interval_to
+        except ValueError:
             raise ValueError('unable to get z to value')
 
     @property

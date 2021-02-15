@@ -179,6 +179,7 @@ def test_z_float(url, expected):
 
 @pytest.mark.parametrize("url, expected", [
     ('https://somewhere.com/collections/my_collection/position?z=12/13', 12),
+    ('https://somewhere.com/collections/my_collection/position?z=../13', None),
     ('https://somewhere.com/collections/my_collection/position?z=500,400', 'unable to get z from value'),
     ('https://somewhere.com/collections/my_collection/position?z=All', 'unable to get z from value'),
     ('https://somewhere.com/collections/my_collection/position?z=12,23,34', 'unable to get z from value'),
@@ -195,6 +196,7 @@ def test_z_interval_from(url, expected):
 
 @pytest.mark.parametrize("url, expected", [
     ('https://somewhere.com/collections/my_collection/position?z=12/13', 13),
+    ('https://somewhere.com/collections/my_collection/position?z=12/..', None),
     ('https://somewhere.com/collections/my_collection/position?z=500,400', 'unable to get z to value'),
     ('https://somewhere.com/collections/my_collection/position?z=All', 'unable to get z to value'),
     ('https://somewhere.com/collections/my_collection/position?z=12,23,34', 'unable to get z to value'),
@@ -331,6 +333,8 @@ def test_datetime_exact(url, expected):
             True),
     ('https://somewhere.com/collections/my_collection/position?datetime=2019-09-07T15:50-04:00/2019-09-07T15:50-05:00',
      True),
+    ('https://somewhere.com/collections/my_collection/position?datetime=../2020-01-01T00:00Z', True),
+    ('https://somewhere.com/collections/my_collection/position?datetime=2020-01-01T00:00Z/..', True),
     ('https://somewhere.com/collections/my_collection/position?datetime=2018-02-12T23%3A20%3A52Z', False),
     ('https://somewhere.com/collections/my_collection/position?datetime=2019-09-07T15:50-04:00', False),
     ('https://somewhere.com/collections/my_collection/position', False),
@@ -350,6 +354,8 @@ def test_datetime_is_interval(url, expected):
             isoparse('2018-02-12T23:20:52Z')),
     ('https://somewhere.com/collections/my_collection/position?datetime=2019-09-07T15:50-04:00/2019-09-07T15:50-05:00',
      isoparse('2019-09-07T15:50-04:00')),
+    ('https://somewhere.com/collections/my_collection/position?datetime=../2020-01-01T00:00Z', None),
+    ('https://somewhere.com/collections/my_collection/position?datetime=2020-01-01T00:00Z/..', isoparse('2020-01-01T00:00Z')),
     ('https://somewhere.com/collections/my_collection/position?datetime=not_a_date/2018-03-12T23%3A20%3A52Z',
      'Datetime format not recognised'),
     ('https://somewhere.com/collections/my_collection/position?datetime=3422-23423-234/2018-03-12T23%3A20%3A52Z',
